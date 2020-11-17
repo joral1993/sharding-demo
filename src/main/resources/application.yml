@@ -1,0 +1,49 @@
+spring:
+  shardingsphere:
+    datasource:
+      #  数据库名称，可自定义，可以为多个，以逗号隔开，每个在这里定义的库，都要在下面定义连接属性
+      names: ds0,ds1
+      #年份为2019年的库
+      ds0:
+        #  采用的数据库连接池，druid
+        type: com.alibaba.druid.pool.DruidDataSource
+        driver-class-name: com.mysql.jdbc.Driver
+        url: jdbc:mysql://127.0.0.1:3306/ds0?useUnicode=true&characterEncoding=UTF-8&useSSL=false&serverTimezone=Asia/Shanghai
+        username: root
+        password: 123
+      #年份为2020年的库
+      ds1:
+        type: com.alibaba.druid.pool.DruidDataSource
+        driver-class-name: com.mysql.jdbc.Driver
+        url: jdbc:mysql://127.0.0.1:3306/ds1?useUnicode=true&characterEncoding=UTF-8&useSSL=false&serverTimezone=Asia/Shanghai
+        username: root
+        password: 123
+    #分库分表
+    sharding:
+      tables:
+        user:
+          actual-data-nodes: ds$->{0..1}.user$->{0..1}
+          #分库
+          database-strategy:
+            inline:
+              sharding-column: id
+              algorithm-expression: ds$->{id % 2}
+          #分表
+          table-strategy:
+            inline:
+              sharding-column: age
+              algorithm-expression: user$->{age > 18 == true ? 1:0 }
+
+    props:
+      # 是否打印逻辑SQL语句和实际SQL语句，建议调试时打印，在生产环境关闭
+      sql:
+        show: true
+
+server:
+  port: 8888
+
+mybatis-plus:
+  mapper-locations: classpath:mapper/*.xml
+  typeAliasesPackage: cn.joral.sharding.pojo
+  configuration:
+    log-impl: org.apache.ibatis.logging.stdout.StdOutImpl
